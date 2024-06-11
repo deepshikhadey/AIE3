@@ -1,4 +1,5 @@
 import os
+import pymupdf
 from typing import List
 
 
@@ -13,14 +14,23 @@ class TextFileLoader:
             self.load_directory()
         elif os.path.isfile(self.path) and self.path.endswith(".txt"):
             self.load_file()
+        elif os.path.isfile(self.path) and self.path.endswith(".pdf"):
+            self.load_pdf_file(self.path)    
         else:
             raise ValueError(
-                "Provided path is neither a valid directory nor a .txt file."
+                "Provided path is neither a valid directory nor a .txt or .pdf file."
             )
 
     def load_file(self):
         with open(self.path, "r", encoding=self.encoding) as f:
             self.documents.append(f.read())
+
+    def load_pdf_file(self, path: str):
+        reader = pymupdf.open(path) # open a document
+        doc = ""
+        for page in reader:
+            doc += page.get_text() + '\n'
+        self.documents.append(doc)
 
     def load_directory(self):
         for root, _, files in os.walk(self.path):
@@ -34,6 +44,7 @@ class TextFileLoader:
     def load_documents(self):
         self.load()
         return self.documents
+    
 
 
 class CharacterTextSplitter:
@@ -63,7 +74,7 @@ class CharacterTextSplitter:
 
 
 if __name__ == "__main__":
-    loader = TextFileLoader("data/KingLear.txt")
+    loader = TextFileLoader("data/PMarcaBlogs.txt")
     loader.load()
     splitter = CharacterTextSplitter()
     chunks = splitter.split_texts(loader.documents)
